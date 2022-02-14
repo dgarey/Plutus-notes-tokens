@@ -1,0 +1,94 @@
+#Choose Directory used to create/Store Nft
+mkdir nft
+cd nft/
+#Converts title into hexdecimal and Saves to variable tokenname
+tokenname="echo -n "BuiltinVsTyped" | xxd -ps"
+tokenamount="Amount you Will Mint"
+ipfs_hash="CID of image you created using Handwritten Notes"
+
+cardano-cli address key-gen --verification-key-file payment.vkey --signing-key-file payment.skey
+
+cardano-cli address build --payment-verification-key-file payment.vkey --out-file payment.addr --mainnet
+
+address=$(cat payment.addr)
+
+cardano-cli query utxo --address $address --mainnet
+
+#start if transferring payment keys#
+
+cardano-cli query protocol-parameters --mainnet --out-file protocol.json
+
+mkdir policy
+
+cardano-cli address key-gen \
+    --verification-key-file policy/policy.vkey \
+    --signing-key-file policy/policy.skey
+
+echo "{" >> policy/policy.script
+echo "  \"type\": \"all\"," >> policy/policy.script 
+echo "  \"scripts\":" >> policy/policy.script 
+echo "  [" >> policy/policy.script 
+echo "   {" >> policy/policy.script 
+echo "     \"type\": \"before\"," >> policy/policy.script 
+echo "     \"slot\": $(expr $(cardano-cli query tip --mainnet | jq .slot?) + 10000)" >> policy/policy.script
+echo "   }," >> policy/policy.script 
+echo "   {" >> policy/policy.script
+echo "     \"type\": \"sig\"," >> policy/policy.script 
+echo "     \"keyHash\": \"$(cardano-cli address key-hash --payment-verification-key-file policy/policy.vkey)\"" >> policy/policy.script 
+echo "   }" >> policy/policy.script
+echo "  ]" >> policy/policy.script 
+echo "}" >> policy/policy.script
+
+slotnumber=""
+
+script="policy/policy.script"
+
+cardano-cli transaction policyid --script-file ./policy/policy.script >> policy/policyID
+
+echo "{" >> metadata.json
+echo "  \"721\": {" >> metadata.json 
+echo "    \"$(cat policy/policyID)\": {" >> metadata.json 
+echo "      \"$(echo $tokenname)\": {" >> metadata.json
+echo "        \"description\": \"***Place Decscripton Here***.\"," >> metadata.json
+echo "        \"name\": \"Name of Token\"," >> metadata.json
+echo "        \"id\": \"2 of 10\"," >> metadata.json
+echo "        \"Method\": \"Created Using Cardano-Cli\"," >> metadata.json
+echo "        \"image\": \"ipfs://$(echo $ipfs_hash)\"" >> metadata.json
+echo "      }" >> metadata.json
+echo "    }" >> metadata.json 
+echo "  }" >> metadata.json 
+echo "}" >> metadata.json
+
+cardano-cli query utxo --address $address --mainnet
+
+txhash1="You must use all imputs at the address as inputs"
+txhash2="You must use all the inputs at the address as inputs"
+
+
+txix1="0"
+txix2="0"
+policyid=$(cat policy/policyID)
+output=1440000
+receiver_addr="The Address you'd like to send your newly minted tokens"
+
+cardano-cli transaction build \
+--mainnet \
+--alonzo-era \
+--tx-in $txhash1#0 \
+--tx-in $txhash2#0 \
+--tx-out $receiver_addr+$output+"$tokenamount $policyid.$tokenname" \
+--change-address $address \
+--mint="$tokenamount $policyid.$tokenname" \
+--minting-script-file $script \
+--metadata-json-file metadata.json  \
+--invalid-hereafter $slotnumber \
+--witness-override 2 \
+--out-file matx.raw
+
+cardano-cli transaction sign  \
+--signing-key-file payment.skey  \
+--signing-key-file policy/policy.skey  \
+--mainnet --tx-body-file matx.raw  \
+--out-file matx.signed
+
+cardano-cli transaction submit --tx-file matx.signed --mainnet
