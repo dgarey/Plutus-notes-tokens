@@ -7,5 +7,6 @@ The goal of this project is to provide a creative way to illustrate the informat
 
 Lecture 1:
 https://pool.pm/50a7e4b890970a67540bbc53fa3518c505d1410a070c06d556b38b3b.416c69636526426f62
+
 Lecture 2:
 https://pool.pm/180993e060df317b9a31b9b86ede58f1a74789a320c7ad0cd1755249.4275696c74696e56735479706564
