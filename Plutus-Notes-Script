@@ -39,7 +39,11 @@ echo "   }" >> policy/policy.script
 echo "  ]" >> policy/policy.script 
 echo "}" >> policy/policy.script
 
-slotnumber=""
+#Lines 2-40 create a policy script that, among other things,  uses a slot number to prevent the further minting or burning of the created native token after a given time.# 
+#Code related to this time lock are referenced in lines 32-33 & 88. After TX construction, the processing node will ensure the slot number contained in the policy script is   #
+# within a valid time interval to process/validate TX. ** policy.script can be viewed using vim policy/policy.script from /nft_parent_directory **
+
+slotnumber="Insert slot number from policy.script created in lines 27-40"
 
 script="policy/policy.script"
 
